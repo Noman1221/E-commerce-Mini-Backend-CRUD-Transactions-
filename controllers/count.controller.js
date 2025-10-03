@@ -1,18 +1,43 @@
-import Cart from "../models/cart.model";
+import Cart from "../models/cart.model.js";
 
-export const CartIncDec = async (req, res) => {
-
+export const incCount = async (req, res) => {
     try {
-        const { count } = req.body;
-        const currentCount = await Cart.count.find({});
-        currentCount = currentCount + 1;
-        const newCount = new Cart({
-            count: currentCount,
-        })
-        await newCount.save();
-        res.status(201).json({ message: "count increament" });
+        let { productId } = req.body;
+        let isCart = await Cart.findOne({ productId });
+
+
+        if (isCart) {
+
+
+            isCart.count += 1;
+            await isCart.save();
+            return res.status(200).json({ message: "count is increment", isCart })
+        } else {
+            let addNewCart = new Cart({
+                productId, count: 1,
+            });
+            await addNewCart.save()
+            return res.status(200).json({ message: "new cart added", addNewCart });
+        };
     } catch (error) {
-        res.status(501).json({ message: error.message });
+        res.status(500).json({ message: error.message });
     }
+};
+
+export const decCount = async (req, res) => {
+    try {
+        let { productId } = req.body;
+        const isCart = await Cart.findOne({ productId });
+        if (isCart.count > 1) {
+            isCart.count -= 1;
+            await isCart.save();
+            res.status(200).json({ message: "cart removed", isCart })
+        } else {
+            await Cart.deleteOne({ productId });
+            return res.status(200).json({ message: "cart removed", isCart })
+        };
+    } catch (error) {
+        res.json({ message: error.message });
+    };
 
 }
